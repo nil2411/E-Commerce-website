@@ -15,6 +15,18 @@ const createOriginMatcher = (originPattern) => {
     return (origin) => regex.test(origin)
 }
 
+const defaultClientOrigins = [
+    'http://localhost:5173',
+    'http://localhost:5174',
+    'https://e-commerce-website.vercel.app',
+    'https://e-commerce-website-*.vercel.app'
+]
+
+const parseOrigins = (value) => String(value || '')
+    .split(',')
+    .map(normalizeOrigin)
+    .filter(Boolean)
+
 const validateEnvironment = () => {
     const required = ['MONGO_URL', 'JWT_SECRET', 'ADMIN_EMAIL', 'ADMIN_PASSWORD']
     const missing = required.filter((name) => !getEnv(name))
@@ -27,18 +39,12 @@ const validateEnvironment = () => {
         throw new Error('JWT_SECRET must contain at least 32 characters')
     }
 
-    if (process.env.NODE_ENV === 'production' && !getEnv('CLIENT_ORIGINS')) {
-        throw new Error('CLIENT_ORIGINS is required in production')
-    }
 }
 
 const env = {
     nodeEnv: getEnv('NODE_ENV', 'development'),
     port: Number(getEnv('PORT', '4000')),
-    clientOrigins: getEnv('CLIENT_ORIGINS', 'http://localhost:5173,http://localhost:5174')
-        .split(',')
-        .map(normalizeOrigin)
-        .filter(Boolean),
+    clientOrigins: [...new Set([...defaultClientOrigins, ...parseOrigins(getEnv('CLIENT_ORIGINS'))])],
     storeCurrency: getEnv('STORE_CURRENCY', 'inr').toLowerCase(),
     deliveryCharge: Number(getEnv('DELIVERY_CHARGE', '10')),
     isProduction: getEnv('NODE_ENV', 'development') === 'production'
