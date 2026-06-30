@@ -3,6 +3,18 @@ const getEnv = (name, fallback = '') => {
     return value === undefined || value === null || value === '' ? fallback : value.trim()
 }
 
+const normalizeOrigin = (origin) => String(origin || '').trim().replace(/\/$/, '')
+
+const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+const createOriginMatcher = (originPattern) => {
+    const normalizedPattern = normalizeOrigin(originPattern)
+    if (!normalizedPattern.includes('*')) return (origin) => origin === normalizedPattern
+
+    const regex = new RegExp(`^${normalizedPattern.split('*').map(escapeRegExp).join('.*')}$`)
+    return (origin) => regex.test(origin)
+}
+
 const validateEnvironment = () => {
     const required = ['MONGO_URL', 'JWT_SECRET', 'ADMIN_EMAIL', 'ADMIN_PASSWORD']
     const missing = required.filter((name) => !getEnv(name))
@@ -25,12 +37,20 @@ const env = {
     port: Number(getEnv('PORT', '4000')),
     clientOrigins: getEnv('CLIENT_ORIGINS', 'http://localhost:5173,http://localhost:5174')
         .split(',')
-        .map((origin) => origin.trim())
+        .map(normalizeOrigin)
         .filter(Boolean),
     storeCurrency: getEnv('STORE_CURRENCY', 'inr').toLowerCase(),
     deliveryCharge: Number(getEnv('DELIVERY_CHARGE', '10')),
     isProduction: getEnv('NODE_ENV', 'development') === 'production'
 }
 
-export { env, getEnv, validateEnvironment }
+const clientOriginMatchers = env.clientOrigins.map(createOriginMatcher)
 
+const isAllowedClientOrigin = (origin) => {
+    if (!origin) return true
+    return clientOriginMatchers.some((matchesOrigin) => matchesOrigin(normalizeOrigin(origin)))
+}
+
+const defaultClientOrigin = env.clientOrigins.find((origin) => !origin.includes('*')) || env.clientOrigins[0]
+
+export { env, getEnv, validateEnvironment, isAllowedClientOrigin, defaultClientOrigin }

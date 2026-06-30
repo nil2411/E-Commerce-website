@@ -3,7 +3,7 @@ import Stripe from 'stripe'
 import Razorpay from 'razorpay'
 import orderModel from '../models/orderModel.js'
 import userModel from '../models/usermodel.js'
-import { env } from '../config/env.js'
+import { defaultClientOrigin, env, isAllowedClientOrigin } from '../config/env.js'
 import {
     buildOrderQuote,
     reserveInventory,
@@ -32,7 +32,7 @@ const getRazorpayClient = () => {
 }
 
 const safeOrigin = (requestOrigin) => (
-    env.clientOrigins.includes(requestOrigin) ? requestOrigin : env.clientOrigins[0]
+    requestOrigin && isAllowedClientOrigin(requestOrigin) ? requestOrigin : defaultClientOrigin
 )
 
 const validateAddress = (address) => {

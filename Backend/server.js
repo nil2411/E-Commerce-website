@@ -12,7 +12,7 @@ import adminRoutes from './routes/adminroutes.js'
 import cartRouter from './routes/cartroutes.js'
 import orderRouter from './routes/orderRoutes.js'
 import { stripeWebhook, razorpayWebhook } from './controllers/orderControllerV2.js'
-import { env, validateEnvironment } from './config/env.js'
+import { env, isAllowedClientOrigin, validateEnvironment } from './config/env.js'
 import { apiRateLimiter, requestLogger, securityHeaders } from './middleware/security.js'
 import { errorHandler, notFound } from './middleware/errors.js'
 import { releaseExpiredReservations } from './services/orderService.js'
@@ -78,7 +78,7 @@ app.post('/order/webhook/razorpay', express.raw({ type: 'application/json', limi
 
 app.use(cors({
     origin(origin, callback) {
-        if (!origin || env.clientOrigins.includes(origin)) return callback(null, true)
+        if (isAllowedClientOrigin(origin)) return callback(null, true)
         callback(Object.assign(new Error('Origin is not allowed by CORS'), { status: 403 }))
     },
     credentials: true,
