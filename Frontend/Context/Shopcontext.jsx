@@ -31,7 +31,7 @@ const normalizeCart = (raw) => {
 const ShopContextProvider = (props) => {
 
   const currency = import.meta.env.VITE_CURRENCY_SYMBOL || "\u20B9";
-  const backendUrl = import.meta.env.VITE_BACKEND_URL
+  const backendUrl = String(import.meta.env.VITE_BACKEND_URL || '').replace(/\/+$/, '')
   const delivery_fee = 10;
   const [search, setsearch] = useState('');
   const [showsearch, setshowsearch] = useState(false);
