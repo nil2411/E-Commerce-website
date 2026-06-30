@@ -1,9 +1,13 @@
 import multer from 'multer';
 import fs from 'fs';
+import os from 'os';
 import path from 'path';
 
+const uploadDir = process.env.VERCEL
+  ? path.join(os.tmpdir(), 'forever-store-uploads')
+  : path.join(process.cwd(), 'uploads');
+
 // Ensure the upload folder exists (so diskStorage can write files safely).
-const uploadDir = path.join(process.cwd(), 'uploads');
 fs.mkdirSync(uploadDir, { recursive: true });
 
 const storage = multer.diskStorage({

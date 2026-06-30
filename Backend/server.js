@@ -22,9 +22,59 @@ app.disable('x-powered-by')
 app.use(requestLogger)
 app.use(securityHeaders)
 
+let server
+let reservationTimer
+let servicesReadyPromise
+let cloudinaryConfigured = false
+
+const initializeServices = async () => {
+    if (!servicesReadyPromise) {
+        servicesReadyPromise = (async () => {
+            validateEnvironment()
+            if (!cloudinaryConfigured) {
+                connectCloudinary()
+                cloudinaryConfigured = true
+            }
+            await connectDb()
+            await productModel.updateMany({ stock: { $exists: false } }, { $set: { stock: 50, active: true } })
+            await releaseExpiredReservations()
+        })().catch((error) => {
+            servicesReadyPromise = undefined
+            throw error
+        })
+    }
+
+    return servicesReadyPromise
+}
+
+const ensureServicesReady = async (req, res, next) => {
+    try {
+        await initializeServices()
+        next()
+    } catch (error) {
+        next(error)
+    }
+}
+
+app.get('/', (req, res) => res.json({ success: true, message: 'Forever Store API' }))
+app.get('/health', async (req, res, next) => {
+    try {
+        await initializeServices()
+        const databaseReady = mongoose.connection.readyState === 1
+        res.status(databaseReady ? 200 : 503).json({
+            success: databaseReady,
+            status: databaseReady ? 'healthy' : 'degraded',
+            database: databaseReady ? 'connected' : 'disconnected',
+            uptimeSeconds: Math.floor(process.uptime())
+        })
+    } catch (error) {
+        next(error)
+    }
+})
+
 // Payment providers require the exact raw bytes to verify webhook signatures.
-app.post('/order/webhook/stripe', express.raw({ type: 'application/json', limit: '1mb' }), stripeWebhook)
-app.post('/order/webhook/razorpay', express.raw({ type: 'application/json', limit: '1mb' }), razorpayWebhook)
+app.post('/order/webhook/stripe', express.raw({ type: 'application/json', limit: '1mb' }), ensureServicesReady, stripeWebhook)
+app.post('/order/webhook/razorpay', express.raw({ type: 'application/json', limit: '1mb' }), ensureServicesReady, razorpayWebhook)
 
 app.use(cors({
     origin(origin, callback) {
@@ -37,6 +87,7 @@ app.use(cors({
 }))
 app.use(express.json({ limit: '1mb' }))
 app.use(apiRateLimiter)
+app.use(ensureServicesReady)
 
 app.use('/user', userRoutes)
 app.use('/products', productRoutes)
@@ -44,29 +95,11 @@ app.use('/admin', adminRoutes)
 app.use('/cart', cartRouter)
 app.use('/order', orderRouter)
 
-app.get('/', (req, res) => res.json({ success: true, message: 'Forever Store API' }))
-app.get('/health', (req, res) => {
-    const databaseReady = mongoose.connection.readyState === 1
-    res.status(databaseReady ? 200 : 503).json({
-        success: databaseReady,
-        status: databaseReady ? 'healthy' : 'degraded',
-        database: databaseReady ? 'connected' : 'disconnected',
-        uptimeSeconds: Math.floor(process.uptime())
-    })
-})
-
 app.use(notFound)
 app.use(errorHandler)
 
-let server
-let reservationTimer
-
 const startServer = async () => {
-    validateEnvironment()
-    connectCloudinary()
-    await connectDb()
-    await productModel.updateMany({ stock: { $exists: false } }, { $set: { stock: 50, active: true } })
-    await releaseExpiredReservations()
+    await initializeServices()
 
     server = app.listen(env.port, () => {
         console.log(JSON.stringify({ level: 'info', message: 'Server started', port: env.port, environment: env.nodeEnv }))
@@ -95,4 +128,5 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     }
 }
 
-export { app, startServer, shutdown }
+export default app
+export { app, startServer, shutdown, initializeServices }
