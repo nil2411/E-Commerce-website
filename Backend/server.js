@@ -118,7 +118,7 @@ const shutdown = async (signal) => {
     await disconnectDb()
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (!process.env.VERCEL && process.argv[1] === fileURLToPath(import.meta.url)) {
     startServer().catch((error) => {
         console.error(JSON.stringify({ level: 'error', message: error.message, stack: error.stack }))
         process.exitCode = 1
