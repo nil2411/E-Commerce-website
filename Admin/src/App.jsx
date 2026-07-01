@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import Navbar from './Components/Navbar'
 import Sidebar from './Components/Sidebar'
 import { Routes, Route } from 'react-router-dom'
+import axios from 'axios'
 import Add from './Pages/Add'
 import List from './Pages/ListV2'
 import Orders from './Pages/Orders'
@@ -20,6 +21,22 @@ const App = () => {
       localStorage.removeItem('token');
     }
   },[token]);
+
+  useEffect(() => {
+    const interceptor = axios.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        if (error.response?.status === 401) {
+          localStorage.removeItem('token');
+          setToken('');
+          error.message = error.response?.data?.message || 'Admin session expired. Please log in again.';
+        }
+        return Promise.reject(error);
+      }
+    );
+
+    return () => axios.interceptors.response.eject(interceptor);
+  }, []);
 
   return (
     <div className='bg-gray-50 min-h-screen'>
