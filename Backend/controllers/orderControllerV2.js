@@ -12,6 +12,7 @@ import {
     fulfillPaidOrder,
     releaseOrderInventory
 } from '../services/orderService.js'
+import { sendOrderPlacedEmail } from '../services/emailService.js'
 
 let stripeClient
 let razorpayClient
@@ -42,6 +43,12 @@ const validateAddress = (address) => {
     }
 
     return Object.fromEntries(required.map((field) => [field, String(address[field]).trim().slice(0, 200)]))
+}
+
+const sendOrderPlacedNotification = (order) => {
+    sendOrderPlacedEmail({ order }).catch((error) => {
+        console.error(JSON.stringify({ level: 'error', message: error.message, orderId: order._id }))
+    })
 }
 
 const createReservedOrder = async ({ userId, rawItems, address, paymentMethod, expires }) => {
@@ -89,6 +96,7 @@ const placeOrder = async (req, res, next) => {
             paymentMethod: 'COD'
         })
         await userModel.findByIdAndUpdate(req.user.id, { cartData: {} })
+        sendOrderPlacedNotification(order)
         res.status(201).json({ success: true, message: 'Order placed', orderId: order._id, amount: order.amount })
     } catch (error) {
         next(error)
