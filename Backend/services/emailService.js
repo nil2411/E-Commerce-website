@@ -1,3 +1,5 @@
+import { env } from '../config/env.js'
+
 const escapeHtml = (value) => String(value ?? '')
     .replaceAll('&', '&amp;')
     .replaceAll('<', '&lt;')
@@ -78,8 +80,12 @@ const orderRows = (order) => (order.items || []).map((item) => `
 
 const emailShell = ({ title, intro, order, receiptNumber }) => {
     const addressHtml = deliveryAddressLines(order.address).map(escapeHtml).join('<br>')
+    const receiptUrl = receiptNumber ? `${env.publicClientUrl}/receipt/${encodeURIComponent(order._id)}` : ''
     const receiptHtml = receiptNumber
         ? `<tr><td style="padding:6px 0;color:#6b7280;font-size:13px;">Receipt</td><td style="padding:6px 0;color:#111827;font-size:13px;text-align:right;font-weight:700;">${escapeHtml(receiptNumber)}</td></tr>`
+        : ''
+    const receiptActionHtml = receiptUrl
+        ? `<table role="presentation" cellspacing="0" cellpadding="0" style="margin:0 0 26px;"><tr><td style="border-radius:6px;background:#111827;"><a href="${escapeHtml(receiptUrl)}" style="display:inline-block;padding:13px 20px;color:#ffffff;text-decoration:none;font-size:14px;font-weight:700;">Download receipt</a></td></tr></table>`
         : ''
 
     return `<!doctype html>
@@ -98,6 +104,7 @@ const emailShell = ({ title, intro, order, receiptNumber }) => {
                     <tr>
                         <td style="padding:28px 32px;">
                             <p style="margin:0 0 22px;color:#374151;font-size:15px;line-height:24px;">${escapeHtml(intro)}</p>
+                            ${receiptActionHtml}
 
                             <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-bottom:26px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:12px 16px;">
                                 <tr><td style="padding:6px 0;color:#6b7280;font-size:13px;">Order ID</td><td style="padding:6px 0;color:#111827;font-size:13px;text-align:right;font-weight:700;">${escapeHtml(order._id)}</td></tr>

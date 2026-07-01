@@ -14,6 +14,7 @@ import Footer from '../src/Components/Footer'
 import { ToastContainer } from 'react-toastify';
 import Profile from './Pages/Profile'
 import AccountAction from './Pages/AccountAction'
+import Receipt from './Pages/Receipt'
 
 //import Searchbar from './Components/Searchbar'
 
@@ -46,6 +47,7 @@ const App = () => {
         <Route path='/Contact' element = {<Contact/>} />
         <Route path='/Cart' element = {<Cart/>} />
         <Route path='/profile' element={<Profile />} />
+        <Route path='/receipt/:orderId' element={<Receipt />} />
         <Route path='/verify-email' element={<AccountAction mode='verify' />} />
         <Route path='/forgot-password' element={<AccountAction mode='forgot' />} />
         <Route path='/reset-password' element={<AccountAction mode='reset' />} />

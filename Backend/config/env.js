@@ -41,10 +41,17 @@ const validateEnvironment = () => {
 
 }
 
+const configuredClientOrigins = parseOrigins(getEnv('CLIENT_ORIGINS'))
+const publicClientUrl = normalizeOrigin(getEnv('PUBLIC_CLIENT_URL'))
+    || configuredClientOrigins.find((origin) => origin.startsWith('https://') && !origin.includes('*'))
+    || defaultClientOrigins.find((origin) => origin.startsWith('https://') && !origin.includes('*'))
+    || defaultClientOrigins[0]
+
 const env = {
     nodeEnv: getEnv('NODE_ENV', 'development'),
     port: Number(getEnv('PORT', '4000')),
-    clientOrigins: [...new Set([...defaultClientOrigins, ...parseOrigins(getEnv('CLIENT_ORIGINS'))])],
+    clientOrigins: [...new Set([...defaultClientOrigins, ...configuredClientOrigins])],
+    publicClientUrl,
     storeCurrency: getEnv('STORE_CURRENCY', 'inr').toLowerCase(),
     deliveryCharge: Number(getEnv('DELIVERY_CHARGE', '10')),
     isProduction: getEnv('NODE_ENV', 'development') === 'production'
