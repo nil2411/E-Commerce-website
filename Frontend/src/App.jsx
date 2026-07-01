@@ -1,5 +1,5 @@
-import React from 'react'
-import { Routes, Route } from 'react-router-dom'
+import React, { useEffect } from 'react'
+import { Routes, Route, useLocation } from 'react-router-dom'
 import Home from './Pages/Home'
 import Login from './Pages/Login'
 import Product from './Pages/Product'
@@ -17,9 +17,20 @@ import AccountAction from './Pages/AccountAction'
 
 //import Searchbar from './Components/Searchbar'
 
+const ScrollToTop = () => {
+  const { pathname } = useLocation()
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+  }, [pathname])
+
+  return null
+}
+
 const App = () => {
   return (
     <div className='px-4 sm:px-[5vw] md:px-[7vw] lg:px-[9vw]'>
+      <ScrollToTop/>
       <ToastContainer/>
       <Navbar/>
       
