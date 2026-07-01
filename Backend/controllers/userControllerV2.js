@@ -11,7 +11,7 @@ const hashToken = (token) => crypto.createHash('sha256').update(token).digest('h
 const createAccessToken = ({ id, role = 'user' }) => jwt.sign(
     { id: String(id), role, type: 'access' },
     process.env.JWT_SECRET,
-    { expiresIn: role === 'admin' ? '30m' : '1h' }
+    { expiresIn: role === 'admin' ? '8h' : '1h' }
 )
 
 const createRefreshToken = (id) => jwt.sign(
